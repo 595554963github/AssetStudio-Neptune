@@ -1,4 +1,4 @@
-# Studio
+# AssetStudio
 
 # NOTICE: Project has been temporarily suspended till further notice.
 
