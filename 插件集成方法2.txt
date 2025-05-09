@@ -1,0 +1,70 @@
+直接复制MainForm.cs和MainForm.Designer.cs到你自己的assetstudio项目里，MainForm.Designer.cs
+
+里我已经创建了插件按钮，为了避免在MainForm.cs里面引入越来越多的命名空间，我创建了个Plugin.cs，
+
+以后把插件的命名空间全都写到这个里面，使用using引入。MainForm.cs的partial class MainForm : Form改成了
+
+public partial class MainForm : Form     ，这样可以避免可访问性不一致。大括号里添加public MenuStrip 
+
+MenuStrip1 => menuStrip1;
+
+在 Plugins.cs 里完成菜单项的添加，可在 Plugins 类里增添一个静态方法，该方法接收 MainForm 实例作为参
+
+数。AddMenuItemsToPluginMenu 方法：接收一个 ToolStripMenuItem 类型的参数 pluginMenu，把创建
+
+好的菜单项添加到该菜单的下拉项里。
+
+AddMenuItemsToMainForm 方法：接收一个 MainForm 类型的参数 mainForm，在方法内部找到 “插件” 
+
+菜单项（假设其名称为 toolStripMenuItem20），再调用 AddMenuItemsToPluginMenu 方法添加菜单项。
+
+MainForm.cs里面的public MainForm()大括号里添加Plugins.AddMenuItemsToMainForm(this)，将当前 
+
+MainForm实例传递给Plugins 类，从而完成菜单项的添加操作。
+
+
+
+仔细查看plugins.cs，
+命名空间与类定义：
+using System.Drawing;
+using System.Windows.Forms;          
+using FileExtractorWinForms;            插件命名空间可以替换成你自己编译的项目的命名空间
+using UniversalByteRemoverWinForms;   插件命名空间可以替换成你自己编译的项目的命名空间
+
+namespace AssetStudio.GUI
+{
+    public partial class Plugins
+    {
+创建菜单项的方法：
+public static ToolStripMenuItem CreateDefaultRemoverMenuItem()
+{
+    var menuItem = new ToolStripMenuItem();
+    menuItem.Name = "toolStripMenuItem22";
+    menuItem.Size = new System.Drawing.Size(180, 22);
+    menuItem.Text = "万能字节移除器";
+    menuItem.Visible = true;
+    menuItem.Click += 万能字节移除器ToolStripMenuItem_Click;
+    return menuItem;
+}
+菜单项点击事件处理方法：
+private static void 万能二进制提取器ToolStripMenuItem_Click(object sender, System.EventArgs e)
+{
+    var formFromExtractor = new FileExtractorWinForms.Form1();
+    formFromExtractor.Show();
+}
+
+private static void 万能字节移除器ToolStripMenuItem_Click(object sender, System.EventArgs e)
+{
+    var formFromByteRemover = new UniversalByteRemoverWinForms.Form1();
+    formFromByteRemover.Show();
+}
+向插件菜单添加菜单项的方法：
+public static void AddMenuItemsToMainForm(MainForm mainForm)
+{
+    var pluginToolStripMenuItem = mainForm.MenuStrip1.Items["toolStripMenuItem20"] as ToolStripMenuItem;
+    if (pluginToolStripMenuItem != null)
+    {
+        AddMenuItemsToPluginMenu(pluginToolStripMenuItem);
+    }
+}
+

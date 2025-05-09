@@ -1,0 +1,201 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using AssetStudio.CLI.Properties;
+using Newtonsoft.Json;
+using static AssetStudio.CLI.Studio;
+
+namespace AssetStudio.CLI 
+{
+    public class Program
+    {
+        public static void Main(string[] args) => CommandLine.Init(args);
+
+        public static void Run(Options o)
+        {
+            try
+            {
+                var game = GameManager.GetGame(o.GameName);
+
+                if (game == null)
+                {
+                    Console.WriteLine("无效的游戏!!");
+                    Console.WriteLine(GameManager.SupportedGames());
+                    return;
+                }
+
+                if (game.Type.IsUnityCN())
+                {
+                    if (!UnityCNManager.TryGetEntry(o.KeyIndex, out var unityCN))
+                    {
+                        Console.WriteLine("无效的密钥索引!!");
+                        Console.WriteLine($"可用选项: \n{UnityCNManager.ToString()}");
+                        return;
+                    }
+
+                    UnityCN.SetKey(unityCN);
+                    Logger.Info($"[UnityCN]选择的密钥是{unityCN}");
+                }
+
+                Studio.Game = game;
+                Logger.Default = new ConsoleLogger();
+                Logger.Flags = o.LoggerFlags.Aggregate((e, x) => e |= x);
+                Logger.FileLogging = Settings.Default.enableFileLogging;
+                AssetsHelper.Minimal = Settings.Default.minimalAssetMap;
+                AssetsHelper.SetUnityVersion(o.UnityVersion);
+
+                TypeFlags.SetTypes(JsonConvert.DeserializeObject<Dictionary<ClassIDType, (bool, bool)>>(Settings.Default.types));
+
+                var classTypeFilter = Array.Empty<ClassIDType>();
+                if (!o.TypeFilter.IsNullOrEmpty())
+                {
+                    var exportTexture2D = false;
+                    var exportMaterial = false;
+                    var classTypeFilterList = new List<ClassIDType>();
+                    for (int i = 0; i < o.TypeFilter.Length; i++)
+                    {
+                        var typeStr = o.TypeFilter[i];
+                        var type = ClassIDType.UnknownType;
+                        var flag = TypeFlag.Both;
+                    
+                        try
+                        {
+                            if (typeStr.Contains(':'))
+                            {
+                                var param = typeStr.Split(':');
+                    
+                                flag = (TypeFlag)Enum.Parse(typeof(TypeFlag), param[1], true);
+                    
+                                typeStr = param[0];
+                            }
+                    
+                            type = (ClassIDType)Enum.Parse(typeof(ClassIDType), typeStr, true);
+
+                            if (type == ClassIDType.Texture2D)
+                            {
+                                exportTexture2D = flag.HasFlag(TypeFlag.Export);
+                            }
+                            else if (type == ClassIDType.Material)
+                            {
+                                exportMaterial = flag.HasFlag(TypeFlag.Export);
+                            }
+                    
+                            TypeFlags.SetType(type, flag.HasFlag(TypeFlag.Parse), flag.HasFlag(TypeFlag.Export));
+                    
+                            classTypeFilterList.Add(type);
+                        }
+                        catch(Exception )
+                        {
+                            Logger.Error($"{typeStr}格式无效,跳过...");
+                            continue;
+                        }
+                    }
+
+                    classTypeFilter = classTypeFilterList.ToArray();
+
+                    if (ClassIDType.GameObject.CanExport() || ClassIDType.Animator.CanExport())
+                    {
+                        TypeFlags.SetType(ClassIDType.Texture2D, true, exportTexture2D);
+                        if (Settings.Default.exportMaterials)
+                        {
+                            TypeFlags.SetType(ClassIDType.Material, true, exportMaterial);
+                        }
+                        if (ClassIDType.GameObject.CanExport())
+                        {
+                            TypeFlags.SetType(ClassIDType.Animator, true, false);
+                        }
+                        else if(ClassIDType.Animator.CanExport())
+                        {
+                            TypeFlags.SetType(ClassIDType.GameObject, true, false);
+                        }
+                    }
+                }
+
+                if (o.GroupAssetsType == AssetGroupOption.ByContainer)
+                {
+                    TypeFlags.SetType(ClassIDType.AssetBundle, true, false);
+                }
+
+                assetsManager.Silent = o.Silent;
+                assetsManager.Game = game;
+                assetsManager.SpecifyUnityVersion = o.UnityVersion;
+                o.Output.Create();
+
+                if (o.Key != default)
+                {
+                    MiHoYoBinData.Encrypted = true;
+                    MiHoYoBinData.Key = o.Key;
+                }
+
+                if (o.AIFile != null && game.Type.IsGISubGroup())
+                {
+                    ResourceIndex.FromFile(o.AIFile.FullName);
+                }
+
+                if (o.DummyDllFolder != null)
+                {
+                    assemblyLoader.Load(o.DummyDllFolder.FullName);
+                }
+
+                Logger.Info("扫描文件...");
+                var files = o.Input.Attributes.HasFlag(FileAttributes.Directory) ? Directory.GetFiles(o.Input.FullName, "*.*", SearchOption.AllDirectories).OrderBy(x => x.Length).ToArray() : new string[] { o.Input.FullName };
+                Logger.Info($"发现{files.Length}文件");
+
+                if (o.MapOp.HasFlag(MapOpType.CABMap))
+                {
+                    if (o.MapOp.HasFlag(MapOpType.Load))
+                    {
+                        AssetsHelper.BuildCABMap(files, o.MapName, o.Input.FullName, game);
+                    }
+                    else
+                    {
+                        AssetsHelper.LoadCABMapInternal(o.MapName);
+                        assetsManager.ResolveDependencies = true;
+                    }
+                }
+                if (o.MapOp.HasFlag(MapOpType.AssetMap))
+                {
+                    if (o.MapOp.HasFlag(MapOpType.Load))
+                    {
+                        files = AssetsHelper.ParseAssetMap(o.MapName, o.MapType, classTypeFilter, o.NameFilter, o.ContainerFilter);
+                    }
+                    else
+                    {
+                        Task.Run(() => AssetsHelper.BuildAssetMap(files, o.MapName, game, o.Output.FullName, o.MapType, classTypeFilter, o.NameFilter, o.ContainerFilter)).Wait();
+                    }
+                }
+                if (o.MapOp.HasFlag(MapOpType.Both))
+                {
+                    Task.Run(() => AssetsHelper.BuildBoth(files, o.MapName, o.Input.FullName, game, o.Output.FullName, o.MapType, classTypeFilter, o.NameFilter, o.ContainerFilter)).Wait();
+                }
+                if (o.MapOp.Equals(MapOpType.None) || o.MapOp.HasFlag(MapOpType.Load))
+                {
+                    var i = 0;
+
+                    var path = Path.GetDirectoryName(Path.GetFullPath(files[0]));
+                    ImportHelper.MergeSplitAssets(path);
+                    var toReadFile = ImportHelper.ProcessingSplitFiles(files.ToList());
+
+                    var fileList = new List<string>(toReadFile);
+                    foreach (var file in fileList)
+                    {
+                        assetsManager.LoadFiles(file);
+                        if (assetsManager.assetsFileList.Count > 0)
+                        {
+                            BuildAssetData(classTypeFilter, o.NameFilter, o.ContainerFilter, ref i);
+                            ExportAssets(o.Output.FullName, exportableAssets, o.GroupAssetsType, o.AssetExportType);
+                        }
+                        exportableAssets.Clear();
+                        assetsManager.Clear();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+    }
+}

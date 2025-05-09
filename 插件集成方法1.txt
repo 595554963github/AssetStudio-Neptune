@@ -1,0 +1,35 @@
+双击MainForm.cs,给assetstudio的设计器添加按钮插入MenuItem，加入插件按钮，插件按钮里面添加子按钮
+
+插入MenuItem，万能二进制提取器、万能字节移除器，将新增菜单项添加到对应的父菜单下,把dll类库放到
+
+AssetStudio.GUI\plugins文件夹，鼠标右键点击项目，添加引用，浏览，把自己的dll类库添加到项目中，
+
+在MainForm.cs里面使用using引用自己的类库的命名空间，万能二进制提取器的命名空间为
+
+FileExtractorWinForms;万能字节移除器的命名空间为UniversalByteRemoverWinForms;
+
+在MainForm.cs里面为新添加的菜单项添加点击事件处理方法，
+
+如:
+private void 万能二进制提取器ToolStripMenuItem_Click(object sender, EventArgs e)
+{
+    var formFromExtractor = new FileExtractorWinForms.Form1();
+    formFromExtractor.Show();
+}
+
+private void 万能字节移除器ToolStripMenuItem_Click(object sender, EventArgs e)
+{
+    var formFromByteRemover = new UniversalByteRemoverWinForms.Form1();
+    formFromByteRemover.Show();
+}
+
+最后把类库同名的deps.json文件放到项目中，属性设置为始终复制，这样你自己添加的dll类库就集成到
+
+assetstudio里面去了.
+
+类库的命名空间，你在编译程序的时候看看使用的命名空间叫什么，把它复制下来，粘贴到assetstudio的
+
+MainForm.cs里面，使用using你的命名空间，这样你的插件就能在assetstudio里面正常打开了，和原来独
+
+立的程序一样，因为源码一样，只不过一个是类库，一个是可执行程序。
+
