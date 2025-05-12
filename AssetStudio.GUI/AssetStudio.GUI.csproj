@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFrameworks>net8.0-windows</TargetFrameworks>
@@ -96,6 +96,9 @@
         </None>
         <None Update="plugins\Sofdec2Viewer汉化版.exe">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="plugins\UnityPlayer.dll">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="plugins\USM视频查看工具汉化版.exe">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
