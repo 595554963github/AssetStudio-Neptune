@@ -12,4 +12,4 @@
 
 4月29日集成万能二进制提取器，增加插件按钮，点击打开万能二进制提取器会生成一个独立的窗口
 
-5月1日集成万能字节移除器，插件集成方法给未来自定义集成插件的小伙伴们留个教程
+目前已集成sfodec 2 viewer、radvideo64、supertoolbox、万能字节移除器、quickbms和quickbmsbatch
