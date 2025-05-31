@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using FileExtractorWinForms;
 using UniversalByteRemoverWinForms;
-using Extractor.Extractor;
+using supertoolbox.Extractor;
 using QuickBMSBatchExtractor;
 
 namespace AssetStudio.GUI
