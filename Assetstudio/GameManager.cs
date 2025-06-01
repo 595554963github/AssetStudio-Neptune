@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using static AssetStudio.Crypto;
@@ -28,6 +28,7 @@ namespace AssetStudio
             Games.Add(index++, new Mhy(GameTypeMapper.Map(GameType.ZZZ_CB2), GIMhyShiftRow, GIMhyKey, GIMhyMul, null, GISBox, null, 0uL));
             Games.Add(index++, new Mhy(GameTypeMapper.Map(GameType.ZZZ), GIMhyShiftRow, GIMhyKey, GIMhyMul, null, GISBox, null, 0uL));
             Games.Add(index++, new Mr0k(GameTypeMapper.Map(GameType.TOT), Mr0kExpansionKey, initVector: Mr0kInitVector, blockKey: Mr0kBlockKey, postKey: ToTKey));
+            Games.Add(index++, new Game(GameType.崩坏学园2));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.永劫无间)));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.偶像梦幻祭2)));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.航海王热血航线)));
@@ -152,6 +153,7 @@ namespace AssetStudio
         SR_CB2,
         SR,
         TOT,
+        崩坏学园2,
         永劫无间,
         偶像梦幻祭2,
         航海王热血航线,
@@ -222,6 +224,7 @@ namespace AssetStudio
         public static bool IsSRCB2(this GameType type) => type == GameTypeMapper.Map(GameType.SR_CB2);
         public static bool IsSR(this GameType type) => type == GameTypeMapper.Map(GameType.SR);
         public static bool IsTOT(this GameType type) => type == GameTypeMapper.Map(GameType.TOT);
+        public static bool IsGGZ(this GameType type) => type == GameType.崩坏学园2;
         public static bool IsNaraka(this GameType type) => type == GameTypeMapper.Map(GameType.永劫无间);
         public static bool IsOPFP(this GameType type) => type == GameTypeMapper.Map(GameType.航海王热血航线);
         public static bool IsNetEase(this GameType type) => type == GameTypeMapper.Map(GameType.NetEase);
