@@ -1,4 +1,4 @@
-﻿using ZstdSharp;
+using ZstdSharp;
 using System;
 using System.Data;
 using System.IO;
@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Buffers;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace AssetStudio
 {
@@ -602,6 +603,26 @@ namespace AssetStudio
 
                             var compressedBytes = ArrayPool<byte>.Shared.Rent(compressedSize);
                             var uncompressedBytes = ArrayPool<byte>.Shared.Rent(uncompressedSize);
+                            if (Game.Type.IsGGZ())
+                            {
+                                var compressedBytesSpan = compressedBytes.AsSpan(0, compressedSize);
+                                var uncompressedBytesSpan = uncompressedBytes.AsSpan(0, uncompressedSize);
+
+                                reader.Read(compressedBytesSpan);
+                                var cipher = Aes.Create();
+                                cipher.Key = "LPC@a*&^b19b61l/"u8.ToArray();
+                                var dec = cipher.DecryptCbc(compressedBytesSpan, new byte[16]);
+                                compressedBytesSpan = compressedBytesSpan[..dec.Length];
+                                dec.CopyTo(compressedBytesSpan);
+                                var numWrite = LZ4.Instance.Decompress(compressedBytesSpan, uncompressedBytesSpan);
+                                if (numWrite != uncompressedSize)
+                                {
+                                    throw new IOException($"Lz4解压出错, write {numWrite} bytes but expected {uncompressedSize} bytes");
+                                }
+                                blocksStream.Write(uncompressedBytesSpan);
+                                break;
+
+                            }
 
                             try
                             {
