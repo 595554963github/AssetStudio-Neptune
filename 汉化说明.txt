@@ -19,3 +19,5 @@ FakeHeader失效的问题)。
 目前已集成sfodec 2 viewer、radvideo64、supertoolbox、万能字节移除器、quickbms和quickbmsbatch,supertoolbox是我的其他项目，一个模块化程序，正在慢慢适配各种游戏
 
 把它以类库的方式集成到assetstudio里面可以让更多的人使用它，体积小，不会占用大家太多空间。
+
+6月2号新增支持崩坏学园2.
