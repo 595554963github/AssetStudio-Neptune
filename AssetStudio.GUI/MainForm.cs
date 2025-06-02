@@ -1,4 +1,4 @@
-﻿
+
 using Newtonsoft.Json;
 using OpenTK.Graphics.OpenGL;
 using System;
@@ -1596,10 +1596,44 @@ namespace AssetStudio.GUI
 
         private void showOriginalFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var selectasset = (AssetItem)assetListView.Items[assetListView.SelectedIndices[0]];
-            var args = $"/select, \"{selectasset.SourceFile.originalPath ?? selectasset.SourceFile.fullName}\"";
-            var pfi = new ProcessStartInfo("explorer.exe", args);
-            Process.Start(pfi);
+            try
+            {
+                if (assetListView.SelectedIndices.Count == 0)
+                {
+                    MessageBox.Show("请先选择一个资源项", "提示");
+                    return;
+                }
+
+                var selectedItem = assetListView.Items[assetListView.SelectedIndices[0]];
+                var selectasset = selectedItem as AssetItem;
+                if (selectasset == null)
+                {
+                    MessageBox.Show("选中的项不是有效的资源项", "错误");
+                    return;
+                }
+
+                if (selectasset.SourceFile == null)
+                {
+                    MessageBox.Show("所选资源没有关联的源文件", "错误");
+                    return;
+                }
+
+                string filePath = selectasset.SourceFile.originalPath ?? selectasset.SourceFile.fullName;
+                if (string.IsNullOrEmpty(filePath))
+                {
+                    MessageBox.Show("无法获取文件路径", "错误");
+                    return;
+                }
+
+                var args = $"/select, \"{filePath}\"";
+                var pfi = new ProcessStartInfo("explorer.exe", args);
+                Process.Start(pfi);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"发生错误: {ex.Message}", "错误");
+                Logger.Error($"发生错误: {ex.Message}", ex);
+            }
         }
 
         private void exportAnimatorwithAnimationClipMenuItem_Click(object sender, EventArgs e)
@@ -1758,11 +1792,49 @@ namespace AssetStudio.GUI
 
         private void goToSceneHierarchyToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var selectasset = (AssetItem)assetListView.Items[assetListView.SelectedIndices[0]];
-            if (selectasset.TreeNode != null)
+            try
             {
-                sceneTreeView.SelectedNode = selectasset.TreeNode;
-                tabControl1.SelectedTab = tabPage1;
+                if (assetListView.SelectedIndices.Count == 0)
+                {
+                    MessageBox.Show("请先选择一个资源项", "提示");
+                    return;
+                }
+
+                var selectedItem = assetListView.Items[assetListView.SelectedIndices[0]];
+                var selectasset = selectedItem as AssetItem;
+                if (selectasset == null)
+                {
+                    MessageBox.Show("选中的项不是有效的资源项", "错误");
+                    return;
+                }
+
+                if (sceneTreeView == null || sceneTreeView.Nodes.Count == 0)
+                {
+                    MessageBox.Show("场景树未加载或为空", "错误");
+                    return;
+                }
+
+                if (selectasset.TreeNode != null)
+                {
+                    sceneTreeView.SelectedNode = selectasset.TreeNode;
+                    sceneTreeView.Focus();
+
+                    selectasset.TreeNode.EnsureVisible();
+
+                    if (tabControl1 != null && tabPage1 != null)
+                    {
+                        tabControl1.SelectedTab = tabPage1;
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("该资源没有关联的场景节点", "提示");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"发生错误: {ex.Message}", "错误");
+                Logger.Error($"跳转到场景树错误: {ex.Message}", ex);
             }
         }
 
