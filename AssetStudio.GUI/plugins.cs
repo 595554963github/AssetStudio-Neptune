@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Diagnostics;
 using System.Windows.Forms;
-using FileExtractorWinForms;
-using UniversalByteRemoverWinForms;
-using supertoolbox.Extractor;
+using super_toolbox;
+using UniversalByteRemover;
+using UniversalFileExtractor;
 using QuickBMSBatchExtractor;
 
 namespace AssetStudio.GUI
@@ -80,19 +80,19 @@ namespace AssetStudio.GUI
 
         private static void 万能二进制提取器ToolStripMenuItem_Click(object sender, System.EventArgs e)
         {
-            var formFromExtractor = new FileExtractorWinForms.Form1();
+            var formFromExtractor = new FileExtractor();
             formFromExtractor.Show();
         }
 
         private static void 万能字节移除器ToolStripMenuItem_Click(object sender, System.EventArgs e)
         {
-            var formFromByteRemover = new UniversalByteRemoverWinForms.Form1();
+            var formFromByteRemover = new ByteRemover();
             formFromByteRemover.Show();
         }
 
         private static void SuperToolboxToolStripMenuItem_Click(object sender, System.EventArgs e)
         {
-            var formFromSuperToolbox = new Extractor.Extractor.MainForm();
+            var formFromSuperToolbox = new SuperToolbox();
             formFromSuperToolbox.Show();
         }
 
