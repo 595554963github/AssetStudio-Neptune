@@ -1,6 +1,6 @@
 using System;
 using System.Windows.Forms;
-
+using OpenTK.Windowing.Common;
 namespace AssetStudio.GUI
 {
     partial class MainForm
