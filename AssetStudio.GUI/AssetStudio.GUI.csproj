@@ -62,9 +62,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CriFsV2Lib" Version="2.1.2" />
+    <PackageReference Include="MaikelChan.AFSLib" Version="2.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="OpenTK" Version="4.0.0" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
+    <Reference Include="ByteSize">
+      <HintPath>plugins\ByteSize.dll</HintPath>
+    </Reference>
     <Reference Include="OpenTK.WinForms">
       <HintPath>Libraries\OpenTK.WinForms.dll</HintPath>
     </Reference>
@@ -83,12 +88,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- 修改oo2core_9_win64.dll的输出配置 -->
     <Content Include="plugins\oo2core_9_win64.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>oo2core_9_win64.dll</Link>
     </Content>
-    <!-- 添加UnityPlayer.dll的输出配置 -->
     <Content Include="plugins\UnityPlayer.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>UnityPlayer.dll</Link>
@@ -131,14 +134,11 @@
       <BmsScriptFiles Include="$(ProjectDir)plugins\bms script\**" />
     </ItemGroup>
     <Error Condition="!Exists('$(ProjectDir)plugins\bms script')" Text="源文件夹 '$(ProjectDir)plugins\bms script' 不存在。" />
-    <!-- 创建目标文件夹（如果不存在） -->
     <MakeDir Directories="$(OutputPath)plugins\bms script" Condition="!Exists('$(OutputPath)plugins\bms script')" />
     <Copy SourceFiles="@(BmsScriptFiles)" DestinationFiles="@(BmsScriptFiles->'$(OutputPath)plugins\bms script\%(RecursiveDir)%(Filename)%(Extension)')" ContinueOnError="false" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="500">
       <Output TaskParameter="CopiedFiles" ItemName="CopiedBmsScriptFiles" />
     </Copy>
-    <!-- 输出复制成功的文件列表信息 -->
     <Message Importance="high" Text="成功复制以下文件到输出目录: @(CopiedBmsScriptFiles)" Condition="'@(CopiedBmsScriptFiles)' != ''" />
-    <!-- 若没有文件复制成功，抛出错误 -->
     <Error Condition="'@(CopiedBmsScriptFiles)' == ''" Text="未能复制任何文件到输出目录，请检查源文件夹和权限设置。" />
   </Target>
 </Project>
