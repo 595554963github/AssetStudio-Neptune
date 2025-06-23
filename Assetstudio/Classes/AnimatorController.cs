@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -297,7 +297,8 @@ namespace AssetStudio
                 m_CycleOffset = reader.ReadSingle();
                 if (reader.Game.Type.IsArknightsEndfield())
                 {
-                    var m_StateNameHash = reader.ReadUInt32();
+                    var m_SyncGroupID = reader.ReadUInt32();
+                    var m_SyncGroupRole = reader.ReadUInt32();
                 }
                 m_Mirror = reader.ReadBoolean();
                 reader.AlignStream();
