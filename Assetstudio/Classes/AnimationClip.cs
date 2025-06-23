@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -1155,7 +1155,7 @@ namespace AssetStudio
                 m_nEulerCurves = reader.ReadUInt32();
                 m_nScaleCurves = reader.ReadUInt32();
             }
-            else if (reader.Game.Type.IsExAstris())
+            else if (reader.Game.Type.IsExAstris() || reader.Game.Type.IsWangYue())
             {
                 m_nPositionCurves = reader.ReadUInt32();
                 m_nRotationCurves = reader.ReadUInt32();
@@ -1323,7 +1323,7 @@ namespace AssetStudio
         {
             var version = reader.version;
             m_StreamedClip = new StreamedClip(reader);
-            if (reader.Game.Type.IsArknightsEndfield() || reader.Game.Type.IsExAstris())
+            if (reader.Game.Type.IsArknightsEndfield() || reader.Game.Type.IsWangYue() || reader.Game.Type.IsExAstris())
             {
                 m_DenseClip = new ACLDenseClip(reader);
             }
@@ -1336,11 +1336,11 @@ namespace AssetStudio
                 m_ACLClip = new MHYACLClip();
                 m_ACLClip.Read(reader);
             }
-            if (version[0] > 4 || (version[0] == 4 && version[1] >= 3)) //4.3 and up
+            if (version[0] > 4 || (version[0] == 4 && version[1] >= 3))
             {
                 m_ConstantClip = new ConstantClip(reader);
             }
-            if (reader.Game.Type.IsGIGroup() || reader.Game.Type.IsBH3Group() || reader.Game.Type.IsZZZCB1() || reader.Game.Type.IsZZZ())
+            if (reader.Game.Type.IsGIGroup() || reader.Game.Type.IsBH3Group() || reader.Game.Type.IsZZZCB1())
             {
                 m_ACLClip = new MHYACLClip();
                 m_ACLClip.Read(reader);
@@ -1350,7 +1350,7 @@ namespace AssetStudio
                 m_ACLClip = new LnDACLClip();
                 m_ACLClip.Read(reader);
             }
-            if (version[0] < 2018 || (version[0] == 2018 && version[1] < 3)) //2018.3 down
+            if (version[0] < 2018 || (version[0] == 2018 && version[1] < 3))
             {
                 m_Binding = new ValueArrayConstant(reader);
             }
@@ -1943,7 +1943,7 @@ namespace AssetStudio
 
             m_SampleRate = reader.ReadSingle();
             m_WrapMode = reader.ReadInt32();
-            if (reader.Game.Type.IsArknightsEndfield())
+            if (reader.Game.Type.IsArknightsEndfield() || reader.Game.Type.IsWangYue())
             {
                 var m_aclType = reader.ReadInt32();
             }
