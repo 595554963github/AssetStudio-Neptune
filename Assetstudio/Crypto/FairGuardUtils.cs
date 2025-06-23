@@ -1,21 +1,20 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace AssetStudio
 {
-    //Special thanks to LukeFZ#4035.
     public static class FairGuardUtils
     {
         public static void Decrypt(Span<byte> bytes)
         {
-            Logger.Verbose($"尝试解密公平卫士(FairGuard)的加密块...");
+            Logger.Verbose($"尝试使用FairGuard算法解密数据块...");
 
             var encryptedOffset = 0;
-            var encryptedSize = bytes.Length > 0x500 ? 0x500 : bytes.Length;
+            var encryptedSize = Math.Min(0x500, bytes.Length);
 
             if (encryptedSize < 0x20)
             {
-                Logger.Verbose($"块大小小于最小值，跳过...");
+                Logger.Verbose("数据块大小小于最小值，跳过解密...");
                 return;
             }
 
@@ -27,11 +26,11 @@ namespace AssetStudio
                 encrypted[i] ^= 0xA6;
             }
 
-            var seedPart0 = (uint)(encryptedInts[2] ^ 0x1274CBEC ^ encryptedInts[6] ^ 0x3F72EAF3);
-            var seedPart1 = (uint)(encryptedInts[3] ^ 0xBE482704 ^ encryptedInts[0] ^ encryptedSize);
-            var seedPart2 = (uint)(encryptedInts[1] ^ encryptedSize ^ encryptedInts[5] ^ 0x753BDCAA);
-            var seedPart3 = (uint)(encryptedInts[0] ^ 0x82C57E3C ^ encryptedInts[7] ^ 0xE3D947D3);
-            var seedPart4 = (uint)(encryptedInts[4] ^ 0x6F2A7347 ^ encryptedInts[7] ^ 0x4736C714);
+            var seedPart0 = (uint)(encryptedInts[2] ^ encryptedInts[6] ^ 0x226a61b9);
+            var seedPart1 = (uint)(encryptedInts[3] ^ encryptedInts[0] ^ 0x7a39d018 ^ encryptedSize);
+            var seedPart2 = (uint)(encryptedInts[1] ^ encryptedInts[5] ^ 0x18f6d8aa ^ encryptedSize);
+            var seedPart3 = (uint)(encryptedInts[0] ^ encryptedInts[7] ^ 0xaa255fb1);
+            var seedPart4 = (uint)(encryptedInts[4] ^ encryptedInts[7] ^ 0xf78dd8eb);
 
             var seedInts = new uint[] { seedPart0, seedPart1, seedPart2, seedPart3, seedPart4 };
             var seedBytes = MemoryMarshal.AsBytes<uint>(seedInts);
@@ -41,7 +40,7 @@ namespace AssetStudio
             seed = CRC.CalculateDigest(seedBuffer, 0, (uint)seedBuffer.Length);
 
             var key = seedInts[0] ^ seedInts[1] ^ seedInts[2] ^ seedInts[3] ^ seedInts[4] ^ (uint)encryptedSize;
-            
+
             RC4(seedBytes, key);
             var keySeed = CRC.CalculateDigest(seedBytes.ToArray(), 0, (uint)seedBytes.Length);
             var keySeedBytes = BitConverter.GetBytes(keySeed);
@@ -75,6 +74,7 @@ namespace AssetStudio
                         3 => 0x6E8E30ECu,
                         _ => throw new NotImplementedException()
                     };
+
                     RC4(block.Slice(blockOffset, blockSize), seed);
                     var blockInts = MemoryMarshal.Cast<byte, uint>(block[blockOffset..]);
                     for (int j = 0; j < blockSize / 4; j++)
