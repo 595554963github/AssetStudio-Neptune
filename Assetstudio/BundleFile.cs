@@ -476,7 +476,6 @@ namespace AssetStudio
                         blocksInfoBytesSpan = Mr0kUtils.Decrypt(blocksInfoBytesSpan, (Mr0k)Game).ToArray();
                     }
                     goto case CompressionType.Lz4HC;
-                case CompressionType.Lzham:
                 default:
                     throw new IOException($"不支持的压缩类型: {compressionType}");
             }
@@ -644,7 +643,11 @@ namespace AssetStudio
                                 {
                                     NetEaseUtils.DecryptWithHeader(compressedBytesSpan);
                                 }
-                                if (Game.Type.IsArknightsEndfield() && i == 0)
+                                if (Game.Type.IsArknightsEndfield() && i == 0 && compressedBytesSpan[..32].Count((byte)0xa6) > 5)
+                                {
+                                    FairGuardUtils.Decrypt(compressedBytesSpan);
+                                }
+                                if (Game.Type.IsWangYue() && i == 0 && compressedBytesSpan[..32].Count((byte)0xa6) > 5)
                                 {
                                     FairGuardUtils.Decrypt(compressedBytesSpan);
                                 }
@@ -666,7 +669,7 @@ namespace AssetStudio
                             }
                             break;
                         }
-                    case CompressionType.Lz4Inv when Game.Type.IsArknightsEndfield():
+                    case CompressionType.Lz4Inv when (Game.Type.IsArknightsEndfield() || Game.Type.IsWangYue()):
                         {
                             var compressedSize = (int)blockInfo.compressedSize;
                             var uncompressedSize = (int)blockInfo.uncompressedSize;
@@ -680,7 +683,7 @@ namespace AssetStudio
                             try
                             {
                                 reader.Read(compressedBytesSpan);
-                                if (i == 0)
+                                if (i == 0 && compressedBytesSpan[..32].Count((byte)0xa6) > 5)
                                 {
                                     FairGuardUtils.Decrypt(compressedBytesSpan);
                                 }
@@ -688,7 +691,7 @@ namespace AssetStudio
                                 var numWrite = LZ4Inv.Instance.Decompress(compressedBytesSpan, uncompressedBytesSpan);
                                 if (numWrite != uncompressedSize)
                                 {
-                                    throw new IOException($"Lz4解压出错, write {numWrite} bytes but expected {uncompressedSize} bytes");
+                                    throw new IOException($"Lz4 decompression error, write {numWrite} bytes but expected {uncompressedSize} bytes");
                                 }
                                 blocksStream.Write(uncompressedBytesSpan);
                             }
@@ -742,7 +745,7 @@ namespace AssetStudio
                                 var numWrite = decompressor.Unwrap(compressedBytes, 0, compressedSize, uncompressedBytes, 0, uncompressedSize);
                                 if (numWrite != uncompressedSize)
                                 {
-                                    throw new IOException($"Zstd解压出错, write {numWrite}Lz4解压出错, write {uncompressedSize} bytes");
+                                    throw new IOException($"Zstd解压出错, write {numWrite} bytes but expected {uncompressedSize} bytes");
                                 }
                                 blocksStream.Write(uncompressedBytes.ToArray(), 0, uncompressedSize);
                             }
@@ -758,7 +761,7 @@ namespace AssetStudio
                             break;
                         }
                     default:
-                        throw new IOException($"Lz4解压出错, write {compressionType}");
+                        throw new IOException($"不支持的压缩类型{compressionType}");
                 }
             }
             blocksStream.Position = 0;
