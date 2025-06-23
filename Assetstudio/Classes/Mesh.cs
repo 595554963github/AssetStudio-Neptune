@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers.Binary;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,6 +17,7 @@ namespace AssetStudio
             m_Min = reader.ReadVector3();
             m_Max = reader.ReadVector3();
         }
+
     }
 
     public class CompressedMesh
@@ -146,6 +147,11 @@ namespace AssetStudio
                 for (int i = 0; i < m_ChannelsSize; i++)
                 {
                     m_Channels.Add(new ChannelInfo(reader));
+
+                    ////Kh0n5u Debug2
+                    //if (i == 1){
+                    //    m_Channels[i].dimension = 3;
+                    //}
                 }
             }
 
@@ -581,7 +587,7 @@ namespace AssetStudio
                     }
                     var m_KeepVertices = reader.ReadBoolean();
                     var m_KeepIndices = reader.ReadBoolean();
-                    if (reader.Game.Type.IsBH3() && HasVertexColorSkinning(reader.serializedType)) 
+                    if (reader.Game.Type.IsBH3() && HasVertexColorSkinning(reader.serializedType))
                     {
                         var m_VertexColorSkinning = reader.ReadBoolean();
                     }
@@ -764,29 +770,6 @@ namespace AssetStudio
                 }
             }
 
-            if (reader.Game.Type.IsZZZ())
-            {
-                var m_MetricsDirty = reader.ReadBoolean();
-                reader.AlignStream();
-                var m_CloseMeshDynamicCompression = reader.ReadBoolean();
-                reader.AlignStream();
-
-                var m_CompressLevelVertexData = reader.ReadInt32();
-                var m_CompressLevelNormalAndTangent = reader.ReadInt32();
-                var m_CompressLevelTexCoordinates = reader.ReadInt32();
-
-                var m_PackSkinDataToUV2UV3 = reader.ReadBoolean();
-                reader.AlignStream();
-                var m_BakeBVHData = reader.ReadBoolean();
-                var m_BakeRefittableBVH = reader.ReadBoolean();
-                reader.AlignStream();
-                var m_BVHBakeLevels = reader.ReadUInt8Array();
-                reader.AlignStream();
-                var m_BakedBVHSize = reader.ReadUInt64();
-                var m_BVHDataBuffer = reader.ReadUInt8Array();
-                reader.AlignStream();
-            }
-
             if (version[0] > 2018 || (version[0] == 2018 && version[1] >= 3)) //2018.3 and up
             {
                 reader.AlignStream();
@@ -824,6 +807,7 @@ namespace AssetStudio
             GetTriangles();
         }
 
+
         private void ReadVertexData()
         {
             m_VertexCount = (int)m_VertexData.m_VertexCount;
@@ -841,6 +825,11 @@ namespace AssetStudio
                         {
                             m_Channel.dimension = 4;
                         }
+                        ////Kh0n5u Debug4
+                        //if (reader.Game.Type.IsArknightsEndfield() && chn == 1)
+                        //{
+                        //    m_Channel.dimension = 3;
+                        //}
 
                         var vertexFormat = MeshHelper.ToVertexFormat(m_Channel.format, version);
                         var componentByteSize = (int)MeshHelper.GetFormatSize(vertexFormat);
@@ -868,10 +857,18 @@ namespace AssetStudio
 
                         int[] componentsIntArray = null;
                         float[] componentsFloatArray = null;
-                        if (MeshHelper.IsIntFormat(vertexFormat))
-                            componentsIntArray = MeshHelper.BytesToIntArray(componentBytes, vertexFormat);
+                        if (reader.Game.Type.IsArknightsEndfield() && chn == 1)
+                        {
+                            //componentsFloatArray = MeshHelper.BytesToFloatArray(componentBytes, vertexFormat);
+                            componentsFloatArray = MeshHelper.DecompressEndfieldNormal(componentBytes, vertexFormat);
+                        }
                         else
-                            componentsFloatArray = MeshHelper.BytesToFloatArray(componentBytes, vertexFormat);
+                        {
+                            if (MeshHelper.IsIntFormat(vertexFormat))
+                                componentsIntArray = MeshHelper.BytesToIntArray(componentBytes, vertexFormat);
+                            else
+                                componentsFloatArray = MeshHelper.BytesToFloatArray(componentBytes, vertexFormat);
+                        }
 
                         if (version[0] >= 2018)
                         {
@@ -881,7 +878,22 @@ namespace AssetStudio
                                     m_Vertices = componentsFloatArray;
                                     break;
                                 case 1: //kShaderChannelNormal
+                                        //Kh0n5u Debug3
+                                        //if (reader.Game.Type.IsArknightsEndfield())
+                                        //{
+                                        //    float[] m_Vertices_zero = new float[m_VertexCount * 3];
+                                        //    for (int i = 0; i < m_VertexCount; i++)
+                                        //    {
+                                        //        m_Vertices_zero[i * 3] = 0.0f; 
+                                        //        m_Vertices_zero[i * 3 + 1] = 0.0f;
+                                        //        m_Vertices_zero[i * 3 + 2] = 1.0f;
+                                        //    }
+                                        //    m_Normals = m_Vertices_zero;
+                                        //}
+                                        //else
+                                        //{
                                     m_Normals = componentsFloatArray;
+                                    //}
                                     break;
                                 case 2: //kShaderChannelTangent
                                     m_Tangents = componentsFloatArray;
@@ -1479,6 +1491,187 @@ namespace AssetStudio
             }
             return result;
         }
+
+        public static UInt32[] BytesToUInt32Array(byte[] inputBytes, VertexFormat format)
+        {
+            var size = GetFormatSize(format);
+            var len = inputBytes.Length / size;
+            var result = new UInt32[len];
+            for (int i = 0; i < len; i++)
+            {
+                switch (format)
+                {
+                    case VertexFormat.UInt32:
+                        result[i] = BinaryPrimitives.ReadUInt32LittleEndian(inputBytes.AsSpan(i * 4));
+                        break;
+                    case VertexFormat.SInt32:
+                        result[i] = (UInt32)BinaryPrimitives.ReadInt32LittleEndian(inputBytes.AsSpan(i * 4));
+                        break;
+                }
+            }
+            return result;
+        }
+
+        public static int[] BytesToSInt32Array(byte[] inputBytes, VertexFormat format)
+        {
+            var size = GetFormatSize(format);
+            var len = inputBytes.Length / size;
+            var result = new int[len];
+            for (int i = 0; i < len; i++)
+            {
+                switch (format)
+                {
+                    case VertexFormat.UInt32:
+                        result[i] = (int)BinaryPrimitives.ReadUInt32LittleEndian(inputBytes.AsSpan(i * 4));
+                        break;
+                    case VertexFormat.SInt32:
+                        result[i] = BinaryPrimitives.ReadInt32LittleEndian(inputBytes.AsSpan(i * 4));
+                        break;
+                }
+            }
+            return result;
+        }
+
+        public static float[] DecompressEndfieldNormal(this byte[] inputBytes, VertexFormat format) // 8bits per component
+        {
+            var size = MeshHelper.GetFormatSize(format);
+            var len = inputBytes.Length / size;
+            var result = new float[len * 3];
+            var readFloat = new float[len];
+            readFloat = MeshHelper.BytesToFloatArray(inputBytes, format);
+
+            for (int i = 0; i < len; i++)
+            {
+                float value = readFloat[i];
+
+                float r0x = BitConverter.ToInt32(BitConverter.GetBytes(value)) & 0x40000000;
+                r0x = (BitConverter.ToUInt32(BitConverter.GetBytes(r0x)) > 0) ? 1.0f : 0.0f;
+
+                // (((int3)v2.xxx << (32 - int3(10,10,10) - int3(0,10,20))) >> (32 - int3(10,10,10)))
+                float r0y = (BitConverter.ToInt32(BitConverter.GetBytes(value)) << 22) >> 22;
+                float r0z = (BitConverter.ToInt32(BitConverter.GetBytes(value)) << 12) >> 22;
+                float r0w = (BitConverter.ToInt32(BitConverter.GetBytes(value)) << 2) >> 22;
+
+                float r1x = (BitConverter.ToUInt32(BitConverter.GetBytes(value))) >> 31;
+
+                float r1y = 0.00195694715f * r0y;
+                float r1z = 0.00195694715f * r0z;
+                float r1w = 0.00195694715f * r0w;
+
+                float leng = r1x * r1x + r1y * r1y + r1z * r1z + r1w * r1w;
+
+                float r2x = 1.0f - Math.Abs(r1y);
+                float r2y = 1.0f - Math.Abs(r1z);
+                float r2z = 1.0f - Math.Abs(r1y);
+
+                float r3z = r2x - Math.Abs(r1z);
+
+                r2x = r3z < 0.0f ? 1.0f : 0.0f;
+
+                r0y = r0y >= 0.0f ? 1.0f : 0.0f;
+                r0z = r0z >= 0.0f ? 1.0f : 0.0f;
+
+                r0y = r0y * 2.0f - 1.0f;
+                r0z = r0z * 2.0f - 1.0f;
+
+                r0y = r2y * r0y;
+                r0z = r2z * r0z;
+
+                float r3x = (r2x == 1.0f) ? r0y : r1y;
+                float r3y = (r2x == 1.0f) ? r0z : r1z;
+
+                r0y = r3x * r3x + r3y * r3y + r3z * r3z;
+                r0y = 1.0f / (float)Math.Sqrt(r0y);
+
+                r2x = r3x * r0y;
+                r2y = r3y * r0y;
+                r2z = r3z * r0y;
+
+
+
+                //float old_r3x = r3x;
+                //r3x = r3y * r0y - r2z;
+                //r3y = r3z * r0y - r2x;
+                //r3z = old_r3x * r0y - r2y;
+
+                //r0y = r3x * r2x + r3y * r2y + r3z * r2z;
+
+                //r3x = r3x - r0y;
+                //r3y = r3y - r0y;
+                //r3z = r3z - r0y;
+
+                //r0y = r3x * r3x + r3y * r3y + r3z * r3z;
+                //r0y = 1.0f / (float)Math.Sqrt(r0y);
+
+                //r3x = r3x * r0y;
+                //r3y = r3y * r0y;
+                //r3z = r3z * r0y;
+
+
+                //float length = r2x * r2x + r2y * r2y + r2z * r2z;
+
+
+
+
+                // 计算result[i * 3]的值
+                result[i * 3] = r2x;
+                result[i * 3 + 1] = r2y;
+                result[i * 3 + 2] = r2z;
+                //result[i * 3] = 0;
+                //result[i * 3 + 1] = 0;
+                //result[i * 3 + 2] = 1;
+
+            }
+            return result;
+        }
+
+        public static float[] DecompressOctahedron(this byte[] inputBytes, VertexFormat format) // 8bits per component
+        {
+            var size = GetFormatSize(format);
+            var len = inputBytes.Length / size;
+            var result = new float[len * 3];
+            var readFloat = new UInt32[len];
+            readFloat = BytesToUInt32Array(inputBytes, VertexFormat.UInt32);
+            // read per 8 bits per component
+            for (int i = 0; i < len; i++)
+            {
+                var x = readFloat[i] & 0xFFFF;
+                var y = (readFloat[i] >> 16) & 0xFFFF;
+                var z = (readFloat[i] >> 16) & 0xFF;
+                var w = (readFloat[i] >> 24) & 0xFF;
+                /* HLSL Decode Example
+                 * float3 Decode(float2 f)
+                 * {
+                 *  f = f * 2.0 - 1.0;
+                 *  float3 n = float3(f.x, f.y, 1.0 - abs(f.x) - abs(f.y));
+                 *  float t = saturate(-n.z);
+                 *  n.xy += n.xy >= 0.0 ? -t : t;
+                 *  return normalize(n);
+                 *  }
+                 */
+                float f_x = x / 65535.0f * 2.0f - 1.0f;
+                float f_y = y / 65535.0f * 2.0f - 1.0f;
+                float f_z = 1.0f - Math.Abs(f_x) - Math.Abs(f_y);
+                if (f_z < 0.0f)
+                {
+                    float f_t = Math.Max(Math.Min(-f_z, 1.0f), 0.0f);
+                    f_x += f_x >= 0.0f ? -f_t : f_t;
+                    f_y += f_y >= 0.0f ? -f_t : f_t;
+                }
+                float length = (float)Math.Sqrt(f_x * f_x + f_y * f_y + f_z * f_z);
+                if (length > 1e-6f)
+                {
+                    f_x /= length;
+                    f_y /= length;
+                    f_z /= length;
+                }
+                result[i * 3] = f_x;
+                result[i * 3 + 1] = f_y;
+                result[i * 3 + 2] = f_z;
+            }
+            return result;
+        }
+
 
         public static int[] BytesToIntArray(byte[] inputBytes, VertexFormat format)
         {
