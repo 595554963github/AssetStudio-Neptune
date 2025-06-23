@@ -45,7 +45,7 @@ namespace AssetStudio
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.jump群星集结)));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.少女前线)));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.重返未来1999)));
-            Games.Add(index++, new Game(GameTypeMapper.Map(GameType.明日方舟)));
+            Games.Add(index++, new Game(GameTypeMapper.Map(GameType.明日方舟_终末地)));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.咒术回战幻影夜行)));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.MuvLuv维度)));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.动物派对)));
@@ -54,6 +54,7 @@ namespace AssetStudio
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.来自星辰)));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.物华弥新)));
             Games.Add(index++, new Game(GameTypeMapper.Map(GameType.无期迷途)));
+            Games.Add(index++, new Game(GameTypeMapper.Map(GameType.望月)));
         }
         public static Game GetGame(GameType gameType) => GetGame((int)gameType);
         public static Game GetGame(int index)
@@ -170,7 +171,7 @@ namespace AssetStudio
         jump群星集结,
         少女前线,
         重返未来1999,
-        明日方舟,
+        明日方舟_终末地,
         咒术回战幻影夜行,
         MuvLuv维度,
         动物派对,
@@ -183,6 +184,7 @@ namespace AssetStudio
         崩坏星穹铁道,
         未定事件簿,
         无期迷途,
+        望月,
     }
 
     public static class GameTypeMapper
@@ -228,7 +230,8 @@ namespace AssetStudio
         public static bool IsNaraka(this GameType type) => type == GameTypeMapper.Map(GameType.永劫无间);
         public static bool IsOPFP(this GameType type) => type == GameTypeMapper.Map(GameType.航海王热血航线);
         public static bool IsNetEase(this GameType type) => type == GameTypeMapper.Map(GameType.NetEase);
-        public static bool IsArknightsEndfield(this GameType type) => type == GameTypeMapper.Map(GameType.明日方舟);
+        public static bool IsArknightsEndfield(this GameType type) => type == GameTypeMapper.Map(GameType.明日方舟_终末地);
+        public static bool IsWangYue(this GameType type) => type == GameType.望月;
         public static bool IsLoveAndDeepspace(this GameType type) => type == GameTypeMapper.Map(GameType.恋与深空);
         public static bool IsExAstris(this GameType type) => type == GameTypeMapper.Map(GameType.来自星辰);
         public static bool IsPerpetualNovelty(this GameType type) => type == GameTypeMapper.Map(GameType.物华弥新);
@@ -259,7 +262,7 @@ namespace AssetStudio
 
         public static bool IsBlockFile(this GameType type) => type switch
         {
-            GameType.崩坏三 or GameType.BH3Pre or GameType.ZZZ_CB2 or GameType.ZZZ or GameType.崩坏星穹铁道 or GameType.GI_Pack or GameType.未定事件簿 or GameType.明日方舟 => true,
+            GameType.崩坏三 or GameType.BH3Pre or GameType.ZZZ_CB2 or GameType.ZZZ or GameType.崩坏星穹铁道 or GameType.GI_Pack or GameType.未定事件簿 or GameType.望月 or GameType.明日方舟_终末地 => true,
             _ => false,
         };
 
